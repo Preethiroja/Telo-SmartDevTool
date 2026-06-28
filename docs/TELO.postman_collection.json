@@ -1,0 +1,262 @@
+{
+  "info": {
+    "name": "TELO API",
+    "description": "Complete Postman collection for the TELO — Transform API Documentation into Production-Ready Code platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000/api", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "project_id", "value": "", "type": "string" },
+    { "key": "session_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "description": "Returns service status, version, and database connection state."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 201', () => pm.response.to.have.status(201));"] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Alex Johnson\",\n  \"email\": \"alex@example.com\",\n  \"password\": \"securepass123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "if (json.token) pm.collectionVariables.set('token', json.token);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@example.com\",\n  \"password\": \"securepass123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/auth/me",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Alex Johnson\",\n  \"company\": \"Acme Corp\",\n  \"role\": \"Backend Engineer\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analyze",
+      "item": [
+        {
+          "name": "Start analysis",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 202', () => pm.response.to.have.status(202));",
+                "const json = pm.response.json();",
+                "if (json.projectId) pm.collectionVariables.set('project_id', json.projectId);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/analyze",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://petstore.swagger.io/v2/swagger.json\",\n  \"useCase\": \"Manage pets and orders for an e-commerce app\",\n  \"language\": \"javascript\"\n}"
+            },
+            "description": "Starts async analysis. Poll GET /analyze/:id until status is 'complete'."
+          }
+        },
+        {
+          "name": "Get project (poll status)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/analyze/{{project_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Poll every 3s until status changes from 'analyzing' to 'complete' or 'failed'."
+          }
+        },
+        {
+          "name": "List all projects",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/analyze",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Get dashboard stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/analyze/stats",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Delete project",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/analyze/{{project_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Generate",
+      "item": [
+        {
+          "name": "Generate code",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/generate/{{project_id}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"language\": \"javascript\"\n}"
+            },
+            "description": "Generate client code for a completed project. Returns array of files."
+          }
+        },
+        {
+          "name": "Get generated files",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/generate/{{project_id}}/files",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Download ZIP",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/generate/{{project_id}}/download",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Returns a binary ZIP file. Save response to disk as <api-name>-client.zip."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Send message",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.sessionId) pm.collectionVariables.set('session_id', json.sessionId);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"How do I authenticate with this API?\",\n  \"projectId\": \"{{project_id}}\",\n  \"sessionId\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Continue conversation",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Show me a POST example in JavaScript\",\n  \"projectId\": \"{{project_id}}\",\n  \"sessionId\": \"{{session_id}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List chat sessions",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/chat/sessions",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Get session with messages",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/chat/sessions/{{session_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Delete session",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/chat/sessions/{{session_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    }
+  ]
+}
